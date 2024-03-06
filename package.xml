@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>pyrobopath_ros</name>
+  <version>0.0.1</version>
+  <description>ROS interfaces for using pyrobopath</description>
+  <author email="arbogastaw@gmail.com">Alex Arbogast</author>
+  <maintainer email="arbogastaw@gmail.com">Alex Arbogast</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rospy</depend>
+  <depend>cartesian_planning_server</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>control_msgs</depend>
+  <depend>trajectory_msgs</depend>
+</package>
