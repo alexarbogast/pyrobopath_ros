@@ -152,7 +152,7 @@ class ScheduleExecution(object):
         self._contexts[id] = AgentExecutionContext(id)
         self._contexts[id].initialize(self.tf_buffer)
 
-    def move_home(self):
+    def move_home(self, tf=2.0):
         """Moves all agents to the joint positions in the `/{ns}/home_position`
         parameter.
         """
@@ -162,11 +162,15 @@ class ScheduleExecution(object):
 
             point_start = JointTrajectoryPoint()
             point_start.positions = start_state.position
+            point_start.velocities = [0] * len(point_start.positions)
+            point_start.accelerations = [0] * len(point_start.positions)
             point_start.time_from_start = rospy.Duration.from_sec(0.0)
 
             point_goal = JointTrajectoryPoint()
             point_goal.positions = self._contexts[id].joint_home
-            point_goal.time_from_start = rospy.Duration.from_sec(2.0)
+            point_goal.velocities = [0] * len(point_goal.positions)
+            point_goal.accelerations = [0] * len(point_goal.positions)
+            point_goal.time_from_start = rospy.Duration.from_sec(tf)
 
             goal = FollowJointTrajectoryGoal()
             goal.trajectory.joint_names = start_state.name
