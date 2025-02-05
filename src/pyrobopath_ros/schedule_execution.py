@@ -313,8 +313,10 @@ class ScheduleExecution(object):
 
         if isinstance(event, ContourEvent):
             req.velocity = context.agent_model.velocity
+            req.scaling = PlanCartesianTrajectoryRequest.SCALING_FIRST
         else:
             req.velocity = context.agent_model.travel_velocity
+            req.scaling = PlanCartesianTrajectoryRequest.SCALING_FIFTH
 
         resp = PlanCartesianTrajectoryResponse()
         try:
