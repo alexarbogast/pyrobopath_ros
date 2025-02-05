@@ -208,6 +208,7 @@ class ScheduleExecution(object):
         self._schedule = self._planner.plan(toolpath, dependency_graph, self._options)
         rospy.loginfo(f"\n{(50 * '#')}\nFound Toolpath Plan!\n{(50 * '#')}\n")
         print_schedule_info(self._schedule)
+        print()
 
     def execute_schedule(self):
         """
@@ -218,7 +219,7 @@ class ScheduleExecution(object):
             rospy.logwarn("Cannot execute schedule. Schedule is empty.")
             return
 
-        rospy.loginfo(f"\n\n{(50 * '#')}\nExecuting Schedule\n{(50 * '#')}\n")
+        rospy.loginfo(f"\n{(50 * '#')}\nExecuting Schedule\n{(50 * '#')}\n")
         start_time = rospy.get_time()
         rate = rospy.Rate(10)
 
@@ -240,6 +241,13 @@ class ScheduleExecution(object):
                 rospy.loginfo(f"[{agent}] event starting")
                 self._contexts[agent].execution_client.send_goal(jt_goal)
             rate.sleep()
+
+        end_time = rospy.get_time()
+        print()
+        rospy.loginfo(f"\n{(50 * '#')}\nSchedule Execution Succeeded\n{(50 * '#')}\n")
+        rospy.loginfo(f"Start time: {start_time} sec")
+        rospy.loginfo(f"End time: {end_time} sec")
+        rospy.loginfo(f"Elapsed: {end_time - start_time} sec\n")
 
     def _plan_multi_agent_schedule(self, schedule: MultiAgentToolpathSchedule):
         """Populates the schedule plan buffer with motion plans from each
