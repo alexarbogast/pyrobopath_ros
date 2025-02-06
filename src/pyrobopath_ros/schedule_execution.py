@@ -5,7 +5,6 @@
 from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, List, Tuple
-from gcodeparser import GcodeParser
 
 # ros
 import rospy
@@ -33,40 +32,14 @@ from pyrobopath.toolpath_scheduling import (
 
 from pyrobopath_ros.agent_execution_context import AgentExecutionContext
 
+# pyrobopath_ros
+from pyrobopath_ros.utilities import (
+    print_schedule_info,
+    offset_trajectory_times,
+    compile_schedule_plans,
+)
 
 JOINT_STATE_TIMEOUT = 5  # seconds
-
-
-def toolpath_from_gcode(filepath) -> Toolpath:
-    """Parse gcode file to internal toolpath representation.
-
-    :param filepath: The absolute path to a Gcode file
-    :type filepath: str
-    :return: A toolpath created from the input filepath
-    :rtype: Toolpath
-    """
-
-    with open(filepath, "r") as f:
-        gcode = f.read()
-    parsed_gcode = GcodeParser(gcode)
-
-    toolpath = Toolpath.from_gcode(parsed_gcode.lines)
-    return toolpath
-
-
-def print_schedule_info(schedule: MultiAgentToolpathSchedule):
-    """Print the schedule duration, total number of events,
-    and events for each agent
-
-    :param schedule: The schedule to print info
-    :type schedule: MultiAgentToolpathSchedule
-    """
-    print(f"Schedule duration: {schedule.duration()}")
-    print(f"Total Events: {schedule.n_events()}")
-    agents_info = "Agent Events: "
-    for agent, sched in schedule.schedules.items():
-        agents_info += f"{agent}: {len(sched._events)}, "
-    print(agents_info)
 
 
 class ScheduleExecution(object):
@@ -212,8 +185,16 @@ class ScheduleExecution(object):
 
     def execute_schedule(self):
         """
-        Perform Cartesian motion planning for the stored schedule
-        and execute the motion plan on success.
+        Executes the scheduled multi-agent motion plan.
+
+        This function processes a precomputed schedule by planning Cartesian
+        motions for scheduled events and sending the motion plans to the
+        respective execution clients for each agent. The function ensures that
+        all agents complete execution before reporting the final execution
+        time.
+
+        :raises Warning: If the schedule is empty, execution is aborted with a
+        warning.
         """
         if self._schedule is None:
             rospy.logwarn("Cannot execute schedule. Schedule is empty.")
@@ -221,26 +202,22 @@ class ScheduleExecution(object):
 
         rospy.loginfo(f"\n{(50 * '#')}\nExecuting Schedule\n{(50 * '#')}\n")
         start_time = rospy.get_time()
-        rate = rospy.Rate(10)
 
         # Cartesian motion planning for scheduled events
         if not self._plan_multi_agent_schedule(self._schedule):
             return
 
-        # Execute Cartesian motion plan
-        while any(self._schedule_plan_buffer.values()):
-            if rospy.is_shutdown():
-                return
+        # Compile plans and send to action server
+        for agent, plans in self._schedule_plan_buffer.items():
+            for start_t, plan in plans:
+                offset_trajectory_times(plan.trajectory.points, start_t)
 
-            now = rospy.get_time()
-            for agent, plans in self._schedule_plan_buffer.items():
-                if not plans or now - start_time < plans[0][0]:
-                    continue
+            compiled_plan = compile_schedule_plans([p for _, p in plans])
+            rospy.loginfo(f"[{agent}] queuing motion plan for event")
+            self._contexts[agent].execution_client.send_goal(compiled_plan)
 
-                _, jt_goal = self._schedule_plan_buffer[agent].pop(0)
-                rospy.loginfo(f"[{agent}] event starting")
-                self._contexts[agent].execution_client.send_goal(jt_goal)
-            rate.sleep()
+        for agent in self._contexts.keys():
+            self._contexts[agent].execution_client.wait_for_result()
 
         end_time = rospy.get_time()
         print()
