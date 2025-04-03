@@ -176,7 +176,7 @@ class ScheduleExecution(object):
         for context in self._contexts.values():
             context.update_tf(self.tf_buffer)
 
-        """ Schedule multi agent toolpath """
+        # Schedule multi agent toolpath
         rospy.loginfo(f"\n{(50 * '#')}\nScheduling Toolpath:\n{(50 * '#')}\n")
         self._schedule = self._planner.plan(toolpath, dependency_graph, self._options)
         rospy.loginfo(f"\n{(50 * '#')}\nFound Toolpath Plan!\n{(50 * '#')}\n")
@@ -204,6 +204,7 @@ class ScheduleExecution(object):
         start_time = rospy.get_time()
 
         # Cartesian motion planning for scheduled events
+        self._schedule_plan_buffer.clear()
         if not self._plan_multi_agent_schedule(self._schedule):
             return
 
@@ -250,6 +251,10 @@ class ScheduleExecution(object):
             for event in sched._events:
                 resp = self._plan_event(event, agent, start_state)  # type: ignore
                 if resp.error_code.val == ErrorCodes.SUCCESS:
+                    if not resp.trajectory.points:
+                        rospy.logwarn("Planning serivce returned with empty trajectory")
+                        continue
+
                     # create trajectory action server goal
                     goal = FollowJointTrajectoryGoal()
                     goal.trajectory = resp.trajectory
