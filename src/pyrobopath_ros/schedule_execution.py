@@ -12,6 +12,7 @@ import tf2_ros
 from sensor_msgs.msg import JointState
 from control_msgs.msg import FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectoryPoint
+from actionlib_msgs.msg import GoalStatus
 from cartesian_planning_msgs.msg import ErrorCodes
 from cartesian_planning_msgs.srv import (
     PlanCartesianTrajectoryResponse,
@@ -30,9 +31,8 @@ from pyrobopath.toolpath_scheduling import (
     create_dependency_graph_by_layers,
 )
 
-from pyrobopath_ros.agent_execution_context import AgentExecutionContext
-
 # pyrobopath_ros
+from pyrobopath_ros.agent_execution_context import AgentExecutionContext
 from pyrobopath_ros.utilities import (
     print_schedule_info,
     offset_trajectory_times,
@@ -151,8 +151,7 @@ class ScheduleExecution(object):
             self._contexts[id].execution_client.send_goal(goal)
 
         # wait for completion
-        for id in self._contexts.keys():
-            self._contexts[id].execution_client.wait_for_result()
+        self._wait_for_execution()
 
     def schedule_toolpath(
         self, toolpath: Toolpath, dependency_graph: DependencyGraph | None = None
@@ -201,24 +200,28 @@ class ScheduleExecution(object):
             return
 
         rospy.loginfo(f"\n{(50 * '#')}\nExecuting Schedule\n{(50 * '#')}\n")
-        start_time = rospy.get_time()
 
         # Cartesian motion planning for scheduled events
         self._schedule_plan_buffer.clear()
         if not self._plan_multi_agent_schedule(self._schedule):
             return
 
-        # Compile plans and send to action server
+        # Compile plans into single trajectory goal
+        start_time = rospy.get_time()
+        compiled_plans = dict()
         for agent, plans in self._schedule_plan_buffer.items():
             for start_t, plan in plans:
                 offset_trajectory_times(plan.trajectory.points, start_t)
+            compiled_plans[agent] = compile_schedule_plans([p for _, p in plans])
 
-            compiled_plan = compile_schedule_plans([p for _, p in plans])
+        # Send goals to action server
+        for agent, plan in compiled_plans.items():
             rospy.loginfo(f"[{agent}] queuing motion plan for event")
-            self._contexts[agent].execution_client.send_goal(compiled_plan)
+            self._contexts[agent].execution_client.send_goal(
+                plan, done_cb=self._execution_client_done_cb
+            )
 
-        for agent in self._contexts.keys():
-            self._contexts[agent].execution_client.wait_for_result()
+        self._wait_for_execution()
 
         end_time = rospy.get_time()
         print()
@@ -252,7 +255,7 @@ class ScheduleExecution(object):
                 resp = self._plan_event(event, agent, start_state)  # type: ignore
                 if resp.error_code.val == ErrorCodes.SUCCESS:
                     if not resp.trajectory.points:
-                        rospy.logwarn("Planning serivce returned with empty trajectory")
+                        rospy.logwarn("Planning service returned with empty trajectory")
                         continue
 
                     # create trajectory action server goal
@@ -269,6 +272,7 @@ class ScheduleExecution(object):
                         + str(resp.error_code.val)
                     )
                     return False
+        rospy.loginfo("Motion planning succeeded for all events in schedule")
         return True
 
     def _plan_event(self, event: MoveEvent, agent, start_state: JointState):
@@ -306,6 +310,26 @@ class ScheduleExecution(object):
         except rospy.ServiceException as e:
             rospy.logerr(f"Cartesian planning service failed with exception: {e}")
         return resp
+
+    def _wait_for_execution(self):
+        for context in self._contexts.values():
+            context.execution_client.wait_for_result()
+
+    def _execution_client_done_cb(self, state, result):
+        if state == GoalStatus.SUCCEEDED:
+            rospy.loginfo("Goal Succeeded!")
+        elif state == GoalStatus.ABORTED:
+            rospy.loginfo("Goal was aborted!")
+        elif state == GoalStatus.REJECTED:
+            rospy.logerr(f"Goal was rejected. result: {result}")
+            self._abort_execution()
+        else:
+            rospy.loginfo(f"Goal finished with state: {state}, result: {result}")
+
+    def _abort_execution(self):
+        rospy.loginfo("Aborting execution")
+        for context in self._contexts.values():
+            context.execution_client.cancel_all_goals()
 
     def _shutdown(self):
         rospy.logwarn("Received shutdown request. Cancelling all active goals")

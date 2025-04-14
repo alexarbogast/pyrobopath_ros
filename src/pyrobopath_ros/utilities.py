@@ -10,6 +10,8 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 from pyrobopath.toolpath import Toolpath
 from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule
 
+MAX_BACKWARDS_TIME = 1e-8
+
 
 def toolpath_from_gcode(filepath) -> Toolpath:
     """Parse gcode file to internal toolpath representation.
@@ -84,7 +86,14 @@ def compile_schedule_plans(
     goal.trajectory = plans[0].trajectory
 
     for p in plans[1:]:
-        if goal.trajectory.points[-1] == p.trajectory.points[0]:
+        # occasionally the accumlated error in trajectory times is nano-seconds
+        # in the past. Replace the time with the value from the schedule if it's
+        # below the threshold
+        t1_end = goal.trajectory.points[-1].time_from_start
+        t2_start = p.trajectory.points[0].time_from_start
+        diff = t1_end.to_sec() - t2_start.to_sec()
+
+        if abs(diff) < MAX_BACKWARDS_TIME:
             goal.trajectory.points.extend(p.trajectory.points[1:])
         else:
             goal.trajectory.points.extend(p.trajectory.points)

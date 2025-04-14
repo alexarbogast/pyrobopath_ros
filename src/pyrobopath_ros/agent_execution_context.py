@@ -1,60 +1,27 @@
 from __future__ import annotations
-from typing import List, Dict, Any
+from typing import List, Hashable
+import sys
 import numpy as np
-import quaternion as quat
-from typing import Hashable
 
 # ros
 import rospy
 import actionlib
 import tf2_ros
-from geometry_msgs.msg import Pose, Transform
-from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
-from cartesian_planning_msgs.srv import *
+import geometry_msgs.msg as gm
+from control_msgs.msg import FollowJointTrajectoryAction
+from cartesian_planning_msgs.srv import PlanCartesianTrajectory
 
 # pyrobopath
-from pyrobopath.collision_detection.fcl_collision_models import FCLCollisionModel
-from pyrobopath.tools.linalg import SE3
-from pyrobopath.tools.types import NDArray
+from pyrobopath.toolpath.path import Transform, Rotation
 from pyrobopath.collision_detection import FCLRobotBBCollisionModel
 from pyrobopath.toolpath_scheduling import AgentModel
 
 
-def transform_tf_to_np(transform):
-    """Returns a 4x4 numpy homogeneous transformation from a provided tf frame
-
-    :param transform: the tf transform to convert
-    :type transform: :class:`geometry_msgs.msg.TransformStamped`
-    :return: a 4x4 homogeneous transformation matrix
-    :rtype: np.ndarray
-    """
-    p = transform.translation
-    q = transform.rotation
-
-    p = np.array([p.x, p.y, p.z])
-    q = quat.quaternion(q.w, q.x, q.y, q.z)
-
-    np_tf = np.identity(4, dtype=np.float64)
-    np_tf[:3, :3] = quat.as_rotation_matrix(q)
-    np_tf[:3, 3] = p
-    return np_tf
-
-
-def transform_to_pose(transform_tf: Transform) -> SE3:
+def tf_to_transform(transform_tf: gm.Transform) -> Transform:
     p = transform_tf.translation
     q = transform_tf.rotation
-    se3 = SE3.Quaternion(q.w, q.x, q.y, q.z)
-    se3.t = np.array([p.x, p.y, p.z])
-    return se3
-
-
-def _read_ros_param_values(params: Dict[str, Any]) -> Dict[str, Any]:
-    for key, default in params.items():
-        if default:
-            params[key] = rospy.get_param(key, default)
-        else:
-            params[key] = rospy.get_param(key)
-    return params
+    pose = Transform([p.x, p.y, p.z], [q.w, q.x, q.y, q.z])
+    return pose
 
 
 class AgentExecutionContext(object):
@@ -85,10 +52,10 @@ class AgentExecutionContext(object):
         self.eef_frame: str = ""
         self.task_frame: str = ""
         self.joint_home: List[float] = []
-        self.eef_to_task: SE3 = SE3()
-        self.task_to_base: SE3 = SE3()
-        self.base_to_task: SE3 = SE3()
-        self.eef_rotation = quat.quaternion()
+        self.eef_to_task: Transform = Transform()
+        self.task_to_base: Transform = Transform()
+        self.base_to_task: Transform = Transform()
+        self.eef_rotation: Rotation = Rotation()
 
         self.planning_client = rospy.ServiceProxy(
             f"{self.id}/cartesian_planning_server/plan_cartesian_trajectory",
@@ -119,11 +86,8 @@ class AgentExecutionContext(object):
                 rospy.get_param(f"{self.id}/collision/height"),
             )
 
-            eef_rotation = np.array(
+            self.eef_rotation = Rotation(
                 rospy.get_param(f"{self.id}/eef_rotation", [1.0, 0.0, 0.0, 0.0])
-            )
-            self.eef_rotation = quat.quaternion(
-                eef_rotation[0], eef_rotation[1], eef_rotation[2], eef_rotation[3]
             )
 
             velocity = rospy.get_param(f"{self.id}/velocity")
@@ -137,9 +101,7 @@ class AgentExecutionContext(object):
         self.update_tf(tf_buffer, self._agent_model is not None)
 
         # build collision model
-        collision_model = FCLRobotBBCollisionModel(
-            x=col_dim[0], y=col_dim[1], z=col_dim[2], anchor=self.eef_to_task.t
-        )
+        collision_model = FCLRobotBBCollisionModel(col_dim, anchor=self.eef_to_task.t)
 
         # build agent model
         self._agent_model = AgentModel(
@@ -172,9 +134,9 @@ class AgentExecutionContext(object):
             eef_to_task = tf_buffer.lookup_transform(
                 self.task_frame, self.eef_frame, rospy.Time()
             )
-            self.eef_to_task = transform_to_pose(eef_to_task.transform)
-            self.task_to_base = transform_to_pose(task_to_base.transform)
-            self.base_to_task = transform_to_pose(base_to_task.transform)
+            self.eef_to_task = tf_to_transform(eef_to_task.transform)
+            self.task_to_base = tf_to_transform(task_to_base.transform)
+            self.base_to_task = tf_to_transform(base_to_task.transform)
         except:
             rospy.logfatal(f"Failed to find transforms for agent {self.id}")
 
@@ -209,17 +171,17 @@ class AgentExecutionContext(object):
         :return: A pose from the provided point
         :rtype: geometry_msgs.msg.Pose
         """
-        pose = Pose()
+        pose = gm.Pose()
         pose.position.x = point[0]
         pose.position.y = point[1]
         pose.position.z = point[2]
 
         theta = np.arctan2(point[1], point[0])
-        q = quat.quaternion(np.cos(theta / 2), 0.0, 0.0, np.sin(theta / 2))
-        rot = q * self.eef_rotation
+        rot = Rotation([np.cos(theta / 2), 0.0, 0.0, np.sin(theta / 2)])
+        q = (rot @ self.eef_rotation).quat
 
-        pose.orientation.w = rot.w
-        pose.orientation.x = rot.x
-        pose.orientation.y = rot.y
-        pose.orientation.z = rot.z
+        pose.orientation.w = q.w
+        pose.orientation.x = q.x
+        pose.orientation.y = q.y
+        pose.orientation.z = q.z
         return pose
