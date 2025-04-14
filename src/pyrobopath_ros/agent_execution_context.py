@@ -85,6 +85,7 @@ class AgentExecutionContext(object):
                 rospy.get_param(f"{self.id}/collision/width"),
                 rospy.get_param(f"{self.id}/collision/height"),
             )
+            col_offset = rospy.get_param(f"{self.id}/collision/offset", np.zeros(3))
 
             self.eef_rotation = Rotation(
                 rospy.get_param(f"{self.id}/eef_rotation", [1.0, 0.0, 0.0, 0.0])
@@ -101,7 +102,9 @@ class AgentExecutionContext(object):
         self.update_tf(tf_buffer, self._agent_model is not None)
 
         # build collision model
-        collision_model = FCLRobotBBCollisionModel(col_dim, anchor=self.eef_to_task.t)
+        collision_model = FCLRobotBBCollisionModel(
+            col_dim, anchor=self.eef_to_task.t, offset=col_offset
+        )
 
         # build agent model
         self._agent_model = AgentModel(
