@@ -16,6 +16,8 @@ from pyrobopath.toolpath.path import Transform, Rotation
 from pyrobopath.collision_detection import FCLRobotBBCollisionModel
 from pyrobopath.toolpath_scheduling import AgentModel
 
+TF_TIMEOUT = rospy.Duration(5)  # seconds
+
 
 def tf_to_transform(transform_tf: gm.Transform) -> Transform:
     p = transform_tf.translation
@@ -129,13 +131,13 @@ class AgentExecutionContext(object):
         """
         try:
             base_to_task = tf_buffer.lookup_transform(
-                self.task_frame, self.base_frame, rospy.Time()
+                self.task_frame, self.base_frame, rospy.Time(), timeout=TF_TIMEOUT
             )
             task_to_base = tf_buffer.lookup_transform(
-                self.base_frame, self.task_frame, rospy.Time()
+                self.base_frame, self.task_frame, rospy.Time(), timeout=TF_TIMEOUT
             )
             eef_to_task = tf_buffer.lookup_transform(
-                self.task_frame, self.eef_frame, rospy.Time()
+                self.task_frame, self.eef_frame, rospy.Time(), timeout=TF_TIMEOUT
             )
             self.eef_to_task = tf_to_transform(eef_to_task.transform)
             self.task_to_base = tf_to_transform(task_to_base.transform)

@@ -86,7 +86,7 @@ def compile_schedule_plans(
     goal.trajectory = plans[0].trajectory
 
     for p in plans[1:]:
-        # occasionally the accumlated error in trajectory times is nano-seconds
+        # occasionally the accumulated error in trajectory times is nano-seconds
         # in the past. Replace the time with the value from the schedule if it's
         # below the threshold
         t1_end = goal.trajectory.points[-1].time_from_start

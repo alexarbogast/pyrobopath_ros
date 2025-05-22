@@ -65,9 +65,6 @@ class ScheduleExecution(object):
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-        # give tf some time to update
-        rospy.sleep(0.1)
-
         try:
             self._namespaces: List[str] = rospy.get_param("namespaces")  # type: ignore
         except KeyError as e:
@@ -133,21 +130,15 @@ class ScheduleExecution(object):
         for id in self._contexts.keys():
             start_state = rospy.wait_for_message(f"/{id}/joint_states", JointState)
 
-            point_start = JointTrajectoryPoint()
-            point_start.positions = start_state.position
-            point_start.velocities = [0] * len(point_start.positions)
-            point_start.accelerations = [0] * len(point_start.positions)
-            point_start.time_from_start = rospy.Duration.from_sec(0.0)
-
-            point_goal = JointTrajectoryPoint()
-            point_goal.positions = self._contexts[id].joint_home
-            point_goal.velocities = [0] * len(point_goal.positions)
-            point_goal.accelerations = [0] * len(point_goal.positions)
-            point_goal.time_from_start = rospy.Duration.from_sec(tf)
+            point = JointTrajectoryPoint()
+            point.positions = self._contexts[id].joint_home
+            point.velocities = [0] * len(point.positions)
+            point.accelerations = [0] * len(point.positions)
+            point.time_from_start = rospy.Duration.from_sec(tf)
 
             goal = FollowJointTrajectoryGoal()
             goal.trajectory.joint_names = start_state.name
-            goal.trajectory.points = [point_start, point_goal]
+            goal.trajectory.points = [point]
             self._contexts[id].execution_client.send_goal(goal)
 
         # wait for completion
@@ -215,7 +206,10 @@ class ScheduleExecution(object):
             compiled_plans[agent] = compile_schedule_plans([p for _, p in plans])
 
         # Send goals to action server
+        traj_preprocess_offset = 1.0
+        t_start = rospy.get_time() + traj_preprocess_offset
         for agent, plan in compiled_plans.items():
+            plan.trajectory.header.stamp = rospy.Time.from_sec(t_start)
             rospy.loginfo(f"[{agent}] queuing motion plan for event")
             self._contexts[agent].execution_client.send_goal(
                 plan, done_cb=self._execution_client_done_cb
@@ -290,19 +284,20 @@ class ScheduleExecution(object):
         """
         context = self._contexts[agent]
         path_base = [context.task_to_base * p for p in event.data]
+
         req = PlanCartesianTrajectoryRequest()
         req.start_state = start_state
-
-        for point in path_base:
-            pose = context.create_pose(point)
-            req.path.append(pose)
+        req.path = [context.create_pose(p) for p in path_base]
 
         if isinstance(event, ContourEvent):
-            req.velocity = context.agent_model.velocity
+            req.max_linear_velocity = context.agent_model.velocity
+            req.max_angular_velocity = 1.0
             req.scaling = PlanCartesianTrajectoryRequest.SCALING_FIRST
+            req.max_angular_velocity
         else:
-            req.velocity = context.agent_model.travel_velocity
-            req.scaling = PlanCartesianTrajectoryRequest.SCALING_FIFTH
+            req.max_linear_velocity = context.agent_model.travel_velocity
+            req.max_angular_velocity = 1.0
+            req.scaling = PlanCartesianTrajectoryRequest.SCALING_FIRST
 
         resp = PlanCartesianTrajectoryResponse()
         try:
@@ -319,7 +314,7 @@ class ScheduleExecution(object):
         if state == GoalStatus.SUCCEEDED:
             rospy.loginfo("Goal Succeeded!")
         elif state == GoalStatus.ABORTED:
-            rospy.loginfo("Goal was aborted!")
+            rospy.loginfo(f"Goal was aborted!. result: {result}")
         elif state == GoalStatus.REJECTED:
             rospy.logerr(f"Goal was rejected. result: {result}")
             self._abort_execution()
