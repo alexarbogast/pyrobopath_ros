@@ -1,5 +1,6 @@
 from typing import List
 from gcodeparser import GcodeParser
+from copy import deepcopy
 
 # ros
 import rospy
@@ -83,7 +84,7 @@ def compile_schedule_plans(
     goal.path_tolerance = plans[0].path_tolerance
     goal.goal_tolerance = plans[0].goal_tolerance
     goal.goal_time_tolerance = plans[0].goal_time_tolerance
-    goal.trajectory = plans[0].trajectory
+    goal.trajectory = deepcopy(plans[0].trajectory)
 
     for p in plans[1:]:
         # occasionally the accumulated error in trajectory times is nano-seconds
@@ -96,6 +97,6 @@ def compile_schedule_plans(
         if abs(diff) < MAX_BACKWARDS_TIME:
             goal.trajectory.points.extend(p.trajectory.points[1:])
         else:
-            goal.trajectory.points.extend(p.trajectory.points)
+            goal.trajectory.points.extend(p.trajectory.points[:])
 
     return goal
