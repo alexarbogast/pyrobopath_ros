@@ -1,6 +1,4 @@
-"""Pyrobopath interfaces for schedule execution in ROS
-
-"""
+"""Pyrobopath interfaces for schedule execution in ROS"""
 
 from __future__ import annotations
 from collections import defaultdict
@@ -20,15 +18,14 @@ from cartesian_planning_msgs.srv import (
 )
 
 # pyrobopath
+from pyrobopath.process import DependencyGraph, create_dependency_graph_by_z
 from pyrobopath.toolpath import Toolpath
-from pyrobopath.scheduling import DependencyGraph
 from pyrobopath.toolpath_scheduling import (
     MultiAgentToolpathSchedule,
     MultiAgentToolpathPlanner,
     PlanningOptions,
     MoveEvent,
     ContourEvent,
-    create_dependency_graph_by_layers,
 )
 
 # pyrobopath_ros
@@ -161,7 +158,7 @@ class ScheduleExecution(object):
         """
 
         if dependency_graph is None:
-            dependency_graph = create_dependency_graph_by_layers(toolpath)
+            dependency_graph = create_dependency_graph_by_z(toolpath)
 
         for context in self._contexts.values():
             context.update_tf(self.tf_buffer)

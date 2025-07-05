@@ -8,13 +8,9 @@ from pyrobopath.toolpath import Toolpath
 import rospy
 import rospkg
 
+from pyrobopath.process import AgentModel, create_dependency_graph_by_z
 from pyrobopath.collision_detection import FCLRobotBBCollisionModel
-from pyrobopath.toolpath_scheduling import (
-    create_dependency_graph_by_layers,
-    AgentModel,
-    MultiAgentToolpathPlanner,
-    PlanningOptions,
-)
+from pyrobopath.toolpath_scheduling import MultiAgentToolpathPlanner, PlanningOptions
 
 from pyrobopath_ros import toolpath_from_gcode, print_schedule_info
 
@@ -36,7 +32,7 @@ class RoboPath(object):
             capabilities=[0],
             velocity=50.0,
             travel_velocity=50.0,
-            collision_model=FCLRobotBBCollisionModel(200.0, 50.0, 300, bf1),
+            collision_model=FCLRobotBBCollisionModel((200.0, 50.0, 300), bf1),
         )
         agent2 = AgentModel(
             base_frame_position=bf2,
@@ -44,7 +40,7 @@ class RoboPath(object):
             capabilities=[1],
             velocity=50.0,
             travel_velocity=50.0,
-            collision_model=FCLRobotBBCollisionModel(200.0, 50.0, 300, bf2),
+            collision_model=FCLRobotBBCollisionModel((200.0, 50.0, 300), bf2),
         )
         agent_models = {"robot1": agent1, "robot2": agent2}
 

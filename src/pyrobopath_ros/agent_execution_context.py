@@ -12,9 +12,9 @@ from control_msgs.msg import FollowJointTrajectoryAction
 from cartesian_planning_msgs.srv import PlanCartesianTrajectory
 
 # pyrobopath
+from pyrobopath.process import AgentModel
 from pyrobopath.toolpath.path import Transform, Rotation
 from pyrobopath.collision_detection import FCLRobotBBCollisionModel
-from pyrobopath.toolpath_scheduling import AgentModel
 
 TF_TIMEOUT = rospy.Duration(5)  # seconds
 
