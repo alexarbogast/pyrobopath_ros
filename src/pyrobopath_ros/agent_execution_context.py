@@ -8,15 +8,27 @@ import rospy
 import actionlib
 import tf2_ros
 import geometry_msgs.msg as gm
-from control_msgs.msg import FollowJointTrajectoryAction
-from cartesian_planning_msgs.srv import PlanCartesianTrajectory
+from sensor_msgs.msg import JointState
+from trajectory_msgs.msg import JointTrajectoryPoint
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from controller_manager_msgs.srv import SwitchController, SwitchControllerRequest
 
 # pyrobopath
 from pyrobopath.process import AgentModel
 from pyrobopath.toolpath.path import Transform, Rotation
 from pyrobopath.collision_detection import FCLRobotBBCollisionModel
 
+# pyrobopath_ros
+from pyrobopath_ros.msg import (
+    ScheduleTrajectory,
+    FollowScheduleTrajectoryAction,
+    FollowScheduleTrajectoryGoal,
+)
+
 TF_TIMEOUT = rospy.Duration(5)  # seconds
+
+JOINT_SPACE_CONTROLLER = "position_trajectory_controller"
+TASK_SPACE_CONTROLLER = "pose_controller"
 
 
 def tf_to_transform(transform_tf: gm.Transform) -> Transform:
@@ -26,7 +38,26 @@ def tf_to_transform(transform_tf: gm.Transform) -> Transform:
     return pose
 
 
-class AgentExecutionContext(object):
+class ControllerManagerClient:
+    def __init__(self, id):
+        self.id = id
+        rospy.wait_for_service(f"{self.id}/controller_manager/switch_controller")
+        self.switch_controller_client = rospy.ServiceProxy(
+            f"{self.id}/controller_manager/switch_controller", SwitchController
+        )
+
+    def switch_controller(self, start_controllers, stop_controllers):
+        try:
+            req = SwitchControllerRequest()
+            req.start_controllers = start_controllers
+            req.stop_controllers = stop_controllers
+            req.strictness = 1
+            self.switch_controller_client.call(req)
+        except rospy.ServiceException as e:
+            print(f"Service call failed: {e}")
+
+
+class AgentExecutionContext:
     """All items related to a single agents execution. The context is composed
     of the following components:
 
@@ -59,14 +90,18 @@ class AgentExecutionContext(object):
         self.base_to_task: Transform = Transform()
         self.eef_rotation: Rotation = Rotation()
 
-        self.planning_client = rospy.ServiceProxy(
-            f"{self.id}/cartesian_planning_server/plan_cartesian_trajectory",
-            PlanCartesianTrajectory,
-        )
-        self.execution_client = actionlib.SimpleActionClient(
+        self.joint_execution_client = actionlib.SimpleActionClient(
             f"{self.id}/position_trajectory_controller/follow_joint_trajectory",
             FollowJointTrajectoryAction,
         )
+
+        self.schedule_execution_client = actionlib.SimpleActionClient(
+            f"{self.id}/follow_schedule_trajectory", FollowScheduleTrajectoryAction
+        )
+        self.controller_manager_client = ControllerManagerClient(self.id)
+
+        self.joint_execution_client.wait_for_server()
+        self.schedule_execution_client.wait_for_server()
 
     def initialize(self, tf_buffer: tf2_ros.Buffer):
         """Initialize the context with values from the ROS parameter server
@@ -159,34 +194,39 @@ class AgentExecutionContext(object):
                 self._agent_model.base_frame_position
             )
 
-    def shutdown(self):
-        self.execution_client.cancel_all_goals()
-
-    def create_pose(self, point: np.ndarray):
-        """Create a pose from a given point that aligns the robot configuration
-        with that required from an FCLRobotBBCollisionModel
-
-        The default pose is a frame that is initially coincident with the robot's
-        base frame. This frame is rotated about the vertical z-axis until the
-        x-axis aims towards the end effector. Then the frame is translated to
-        `point`.
-
-        :param point: A 3D point from which to make the pose
-        :type point: np.ndarray
-        :return: A pose from the provided point
-        :rtype: geometry_msgs.msg.Pose
+    def move_home(self, tf=2.0):
+        """Moves agents to the joint positions in the `/{ns}/home_position`
+        parameter.
         """
-        pose = gm.Pose()
-        pose.position.x = point[0]
-        pose.position.y = point[1]
-        pose.position.z = point[2]
+        self.start_joint_control()
+        start_state = rospy.wait_for_message(f"/{self.id}/joint_states", JointState)
 
-        theta = np.arctan2(point[1], point[0])
-        rot = Rotation([np.cos(theta / 2), 0.0, 0.0, np.sin(theta / 2)])
-        q = (rot @ self.eef_rotation).quat
+        point = JointTrajectoryPoint()
+        point.positions = self.joint_home
+        point.velocities = [0] * len(point.positions)
+        point.accelerations = [0] * len(point.positions)
+        point.time_from_start = rospy.Duration.from_sec(tf)
 
-        pose.orientation.w = q.w
-        pose.orientation.x = q.x
-        pose.orientation.y = q.y
-        pose.orientation.z = q.z
-        return pose
+        goal = FollowJointTrajectoryGoal()
+        goal.trajectory.joint_names = start_state.name
+        goal.trajectory.points = [point]
+        self.joint_execution_client.send_goal(goal)
+
+    def execute_trajectory(self, traj: ScheduleTrajectory):
+        self.start_taskspace_control()
+        goal = FollowScheduleTrajectoryGoal(trajectory=traj)
+        rospy.loginfo(f"Robot {self.id}: Sending trajectory goal")
+        self.schedule_execution_client.send_goal(goal)
+
+    def shutdown(self):
+        self.joint_execution_client.cancel_all_goals()
+
+    def start_joint_control(self):
+        self.controller_manager_client.switch_controller(
+            [JOINT_SPACE_CONTROLLER], [TASK_SPACE_CONTROLLER]
+        )
+
+    def start_taskspace_control(self):
+        self.controller_manager_client.switch_controller(
+            [TASK_SPACE_CONTROLLER], [JOINT_SPACE_CONTROLLER]
+        )

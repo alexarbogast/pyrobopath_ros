@@ -1,15 +1,21 @@
 from typing import List
 from gcodeparser import GcodeParser
 from copy import deepcopy
+import numpy as np
 
 # ros
 import rospy
 from control_msgs.msg import FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectoryPoint
+from geometry_msgs.msg import Pose
 
 # pyrobopath
 from pyrobopath.toolpath import Toolpath
-from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule
+from pyrobopath.toolpath import Rotation, Transform
+from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule, ToolpathSchedule
+
+# pyrobopath_ros
+from pyrobopath_ros.msg import ScheduleTrajectoryPoint, ScheduleTrajectory
 
 MAX_BACKWARDS_TIME = 1e-8
 
@@ -100,3 +106,46 @@ def compile_schedule_plans(
             goal.trajectory.points.extend(p.trajectory.points[:])
 
     return goal
+
+
+def create_pose(point: np.ndarray, rot_offset: Rotation):
+    pose = Pose()
+    pose.position.x = point[0]
+    pose.position.y = point[1]
+    pose.position.z = point[2]
+
+    theta = np.arctan2(point[1], point[0])
+    rot = Rotation([np.cos(theta / 2), 0.0, 0.0, np.sin(theta / 2)])
+    q = (rot @ rot_offset).quat
+
+    pose.orientation.w = q.w
+    pose.orientation.x = q.x
+    pose.orientation.y = q.y
+    pose.orientation.z = q.z
+    return pose
+
+
+def create_schedule_trajectory(
+    sched: ToolpathSchedule, rot_offset: Rotation, transform: Transform
+) -> ScheduleTrajectory:
+    # compile trajectory points
+    traj_points = []
+    initial_point = sched._events[0].traj[0]
+    initial_point_base = transform * initial_point.data
+    traj_points.append(
+        (initial_point.time, create_pose(initial_point_base, rot_offset))
+    )
+    for event in sched._events:
+        for p in event.traj:
+            if abs(p.time - traj_points[-1][0]) < MAX_BACKWARDS_TIME:
+                continue
+            p_base = transform * p.data
+            traj_points.append((p.time, create_pose(p_base, rot_offset)))
+
+    traj = ScheduleTrajectory()
+    for t, p in traj_points:
+        point = ScheduleTrajectoryPoint()
+        point.pose = p
+        point.time_from_start = rospy.Duration.from_sec(t)
+        traj.points.append(point)
+    return traj
