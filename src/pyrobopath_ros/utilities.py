@@ -18,6 +18,7 @@ from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule, ToolpathS
 from pyrobopath_ros.msg import ScheduleTrajectoryPoint, ScheduleTrajectory
 
 MAX_BACKWARDS_TIME = 1e-8
+TIME_DIFF_THRESHOLD = 1e-8
 
 
 def toolpath_from_gcode(filepath) -> Toolpath:
@@ -137,7 +138,7 @@ def create_schedule_trajectory(
     )
     for event in sched._events:
         for p in event.traj:
-            if abs(p.time - traj_points[-1][0]) < MAX_BACKWARDS_TIME:
+            if abs(p.time - traj_points[-1][0]) < TIME_DIFF_THRESHOLD:
                 continue
             p_base = transform * p.data
             traj_points.append((p.time, create_pose(p_base, rot_offset)))

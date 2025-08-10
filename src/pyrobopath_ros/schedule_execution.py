@@ -17,13 +17,9 @@ from pyrobopath.toolpath_scheduling import (
 )
 
 # pyrobopath_ros
-from pyrobopath_ros.agent_execution_context import AgentExecutionContext
-from pyrobopath_ros.utilities import (
-    print_schedule_info,
-    create_schedule_trajectory,
-)
-
-JOINT_STATE_TIMEOUT = 5  # seconds
+from pyrobopath_ros.agent_context import AgentContext
+from pyrobopath_ros.executor import ExecutorFactory
+from pyrobopath_ros.utilities import print_schedule_info
 
 
 class ScheduleExecution(object):
@@ -31,13 +27,14 @@ class ScheduleExecution(object):
     The ScheduleExecution class connects the necessary ROS interfaces to execute
     probopath `ToolpathSchedules` in ROS.
 
-    This object creates and manages an :class:`AgentExecutionContext` for each
+    This object creates and manages an :class:`AgentContext` for each
     namespace in the list provided by the ros parameter namespace. This class
     acts as the interface between pyrobopath scheduling and cartesian
     trajectory planning and execution.
 
     ROS Parameters:
         |  `namespaces`: A list of unique namespaces for each robot.
+        |  `exec_method`: The method of schedule execution. `taskspace_control` or `cartesian_planning`
         |  `retract_height`: The distance a robot should move upward between contours
         |  `collision_gap_threshold`: The linear interpolation distance for collision checking
     """
@@ -48,11 +45,12 @@ class ScheduleExecution(object):
 
         try:
             self._namespaces: List[str] = rospy.get_param("namespaces")  # type: ignore
+            exec_method: str = rospy.get_param("exec_method")  # type: ignore
         except KeyError as e:
             rospy.logerr(f"Missing required parameter: {e}")
             raise e
 
-        self._contexts: Dict[str, AgentExecutionContext] = dict()
+        self._contexts: Dict[str, AgentContext] = dict()
         for ns in self._namespaces:  # type: ignore
             self._build_agent_contexts(ns)
 
@@ -62,6 +60,9 @@ class ScheduleExecution(object):
         rospy.loginfo("Pyrobopath: ready to plan!")
 
         rospy.on_shutdown(self._shutdown)
+
+        # test
+        self.executor = ExecutorFactory.create(exec_method, self._contexts)
 
     @property
     def agent_models(self):
@@ -83,24 +84,20 @@ class ScheduleExecution(object):
         )
 
     def _build_agent_contexts(self, id: str):
-        """Build an AgentExecutionContext with a unique id and initialize
+        """Build an AgentContext with a unique id and initialize
         the agent's parameters
 
         :param id: Unique id for agent.
         :type id: str
         """
-        self._contexts[id] = AgentExecutionContext(id)
+        self._contexts[id] = AgentContext(id)
         self._contexts[id].initialize(self.tf_buffer)
 
     def move_home(self, tf=2.0):
         """Moves all agents to the joint positions in the `/{ns}/home_position`
         parameter.
         """
-        for context in self._contexts.values():
-            context.move_home(tf)
-
-        for context in self._contexts.values():
-            context.joint_execution_client.wait_for_result()
+        self.executor.move_home(tf)
 
     def schedule_toolpath(
         self, toolpath: Toolpath, dependency_graph: DependencyGraph | None = None
@@ -150,21 +147,10 @@ class ScheduleExecution(object):
 
         rospy.loginfo(f"\n{(50 * '#')}\nExecuting Schedule\n{(50 * '#')}\n")
 
-        # convert schedules to trajectories
-        trajectory_buffer = dict()
-        for id, context in self._contexts.items():
-            trajectory_buffer[id] = create_schedule_trajectory(
-                self._schedule.schedules[id], context.eef_rotation, context.task_to_base
-            )
-
         start_time = rospy.get_time()
-        for id in self._contexts.keys():
-            self._contexts[id].execute_trajectory(trajectory_buffer[id])
-
-        for context in self._contexts.values():
-            context.schedule_execution_client.wait_for_result()
-
+        self.executor.execute(self._schedule)
         end_time = rospy.get_time()
+
         rospy.loginfo(f"\n{(50 * '#')}\nSchedule Execution Succeeded\n{(50 * '#')}\n")
         rospy.loginfo(f"Start time: {start_time} sec")
         rospy.loginfo(f"End time: {end_time} sec")
@@ -172,5 +158,4 @@ class ScheduleExecution(object):
 
     def _shutdown(self):
         rospy.logwarn("Received shutdown request. Cancelling all active goals")
-        for context in self._contexts.values():
-            context.shutdown()
+        self.executor.shutdown()
