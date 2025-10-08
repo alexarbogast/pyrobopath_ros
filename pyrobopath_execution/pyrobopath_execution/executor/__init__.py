@@ -1,11 +1,11 @@
 from .executor_base import Executor
-from .taskspace_control_executor import TaskspaceControlExecutor
 from .cartesian_planning_executor import CartesianPlanningExecutor
+# from .taskspace_control_executor import TaskspaceControlExecutor
 
 
 class ExecutorFactory:
     _registry = {
-        "taskspace_control": TaskspaceControlExecutor,
+        # "taskspace_control": TaskspaceControlExecutor,
         "cartesian_planning": CartesianPlanningExecutor,
     }
 

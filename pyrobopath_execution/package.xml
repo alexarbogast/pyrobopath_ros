@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>pyrobopath_execution</name>
+  <version>0.1.0</version>
+  <description>Python ROS2 interfaces for pyrobopath schedule execution</description>
+  <author email="arbogastaw@gmail.com">Alex Arbogast</author>
+  <maintainer email="arbogastaw@gmail.com">Alex Arbogast</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>pyrobopath_msgs</exec_depend
+  <exec_depend>pyrobopath</exec_depend
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

@@ -6,7 +6,7 @@ import numpy as np
 import quaternion
 
 from geometry_msgs.msg import Pose
-from pyrobopath_ros.msg import ScheduleTrajectoryPoint
+from pyrobopath_msgs.msg import ScheduleTrajectoryPoint
 
 
 def create_trajectory(points: List[ScheduleTrajectoryPoint]):

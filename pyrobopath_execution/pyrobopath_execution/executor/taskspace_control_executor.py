@@ -12,13 +12,10 @@ from controller_manager_msgs.srv import SwitchController, SwitchControllerReques
 from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule
 
 # pyrobopath_ros
-from pyrobopath_ros.msg import (
-    ScheduleTrajectory,
-    FollowScheduleTrajectoryAction,
-    FollowScheduleTrajectoryGoal,
-)
-from pyrobopath_ros.agent_context import AgentContext
-from pyrobopath_ros.utilities import create_schedule_trajectory
+from pyrobopath_msgs.msg import ScheduleTrajectory
+from pyrobopath_msgs.action import FollowScheduleTrajectory
+from pyrobopath_execution.agent_context import AgentContext
+from pyrobopath_execution.utilities import create_schedule_trajectory
 from .executor_base import Executor
 
 # TODO: Read values through parameters

@@ -4,8 +4,8 @@ from copy import deepcopy
 import numpy as np
 
 # ros
-import rospy
-from control_msgs.msg import FollowJointTrajectoryGoal
+from rclpy.duration import Duration
+from control_msgs.action import FollowJointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 from geometry_msgs.msg import Pose
 
@@ -15,19 +15,25 @@ from pyrobopath.toolpath import Rotation, Transform
 from pyrobopath.toolpath_scheduling import MultiAgentToolpathSchedule, ToolpathSchedule
 
 # pyrobopath_ros
-from pyrobopath_ros.msg import ScheduleTrajectoryPoint, ScheduleTrajectory
+from pyrobopath_msgs.msg import ScheduleTrajectoryPoint, ScheduleTrajectory
 
 MAX_BACKWARDS_TIME = 1e-8
 TIME_DIFF_THRESHOLD = 1e-8
 
 
 def toolpath_from_gcode(filepath) -> Toolpath:
-    """Parse gcode file to internal toolpath representation.
+    """
+    Parse a G-code file into an internal toolpath representation.
 
-    :param filepath: The absolute path to a Gcode file
-    :type filepath: str
-    :return: A toolpath created from the input filepath
-    :rtype: Toolpath
+    Parameters
+    ----------
+    filepath : str
+        Absolute path to a G-code file.
+
+    Returns
+    -------
+    Toolpath
+        Toolpath created from the input file.
     """
 
     with open(filepath, "r") as f:
@@ -38,56 +44,71 @@ def toolpath_from_gcode(filepath) -> Toolpath:
     return toolpath
 
 
-def print_schedule_info(schedule: MultiAgentToolpathSchedule):
-    """Print the schedule duration, total number of events,
+def schedule_info_string(schedule: MultiAgentToolpathSchedule):
+    """
+    Returns a string containing the schedule duration, total number of events,
     and events for each agent
 
-    :param schedule: The schedule to print info
-    :type schedule: MultiAgentToolpathSchedule
+    Parameters
+    ----------
+    schedule : MultiAgentToolpathSchedule
+        The schedule to inspect.
+
+    Returns
+    -------
+    str
+        A string containing the schedule info
     """
-    print(f"Schedule duration: {schedule.duration()}")
-    print(f"Total Events: {schedule.n_events()}")
+    info = ""
+    info += f"Schedule duration: {schedule.duration()}\n"
+    info += f"Total Events: {schedule.n_events()}\n"
     agents_info = "Agent Events: "
     for agent, sched in schedule.schedules.items():
         agents_info += f"{agent}: {len(sched._events)}, "
-    print(agents_info)
+    info += agents_info + "\n"
+    return info
 
 
 ## Trajectory and schedule modification
 def offset_trajectory_times(traj: List[JointTrajectoryPoint], offset: float):
     """
-    Applies a time offset to each point in a joint trajectory.
+    Apply a time offset to each point in a joint trajectory.
 
-    This function adjusts the `time_from_start` of each `JointTrajectoryPoint`
-    in the given trajectory by adding the specified offset.
+    Parameters
+    ----------
+    traj : list of JointTrajectoryPoint
+        List of trajectory points to modify.
+    offset : float
+        Time offset in seconds.
 
-    :param traj: A list of `JointTrajectoryPoint` instances representing the trajectory.
-    :type traj: List[JointTrajectoryPoint]
-    :param offset: The time offset to apply, in seconds.
-    :type offset: float
+    Notes
+    -----
+    Modifies `traj` in-place.
     """
     for point in traj:
-        point.time_from_start += rospy.Duration(offset)
+        time_from_start = Duration.from_msg(point.time_from_start).nanoseconds
+        point.time_from_start = Duration(
+            nanoseconds=time_from_start + int(offset * 1e9)
+        ).to_msg()
 
 
 def compile_schedule_plans(
-    plans: List[FollowJointTrajectoryGoal],
-) -> FollowJointTrajectoryGoal:
+    plans: List[FollowJointTrajectory.Goal],
+) -> FollowJointTrajectory.Goal:
     """
-    Merges multiple `FollowJointTrajectoryGoal` plans into a single trajectory.
+    Merge multiple trajectory goals into a single trajectory.
 
-    This function takes a list of `FollowJointTrajectoryGoal` objects and
-    combines their trajectories into a single goal. It ensures that consecutive
-    plans are smoothly connected by avoiding duplicate waypoints at the
-    transition between plans.
+    Parameters
+    ----------
+    plans : list of FollowJointTrajectory.Goal
+        List of goals to merge. All plans must share tolerance settings.
 
-    :param plans: A list of `FollowJointTrajectoryGoal` instances to be merged.
-                  Assumes that all plans share the same tolerance settings.
-    :type plans: List[FollowJointTrajectoryGoal]
-    :return: A single `FollowJointTrajectoryGoal` containing the merged trajectory.
-    :rtype: FollowJointTrajectoryGoal
+    Returns
+    -------
+    FollowJointTrajectory.Goal
+        Combined trajectory goal.
     """
-    goal = FollowJointTrajectoryGoal()
+    goal = FollowJointTrajectory.Goal()
     goal.path_tolerance = plans[0].path_tolerance
     goal.goal_tolerance = plans[0].goal_tolerance
     goal.goal_time_tolerance = plans[0].goal_time_tolerance
@@ -99,7 +120,10 @@ def compile_schedule_plans(
         # below the threshold
         t1_end = goal.trajectory.points[-1].time_from_start
         t2_start = p.trajectory.points[0].time_from_start
-        diff = t1_end.to_sec() - t2_start.to_sec()
+
+        diff = (t1_end.sec + t1_end.nanosec * 1e-9) - (
+            t2_start.sec + t2_start.nanosec * 1e-9
+        )
 
         if abs(diff) < MAX_BACKWARDS_TIME:
             goal.trajectory.points.extend(p.trajectory.points[1:])
@@ -110,6 +134,21 @@ def compile_schedule_plans(
 
 
 def create_pose(point: np.ndarray, rot_offset: Rotation):
+    """
+    Create a Pose from a 3D point with an orientation defined by rotation offset.
+
+    Parameters
+    ----------
+    point : ndarray, shape (3,)
+        Cartesian position [x, y, z].
+    rot_offset : Rotation
+        Additional rotation to apply.
+
+    Returns
+    -------
+    Pose
+        The resulting pose.
+    """
     pose = Pose()
     pose.position.x = point[0]
     pose.position.y = point[1]
@@ -129,7 +168,23 @@ def create_pose(point: np.ndarray, rot_offset: Rotation):
 def create_schedule_trajectory(
     sched: ToolpathSchedule, rot_offset: Rotation, transform: Transform
 ) -> ScheduleTrajectory:
-    # compile trajectory points
+    """
+    Convert a toolpath schedule into a ROS 2 trajectory message.
+
+    Parameters
+    ----------
+    sched : ToolpathSchedule
+        Toolpath schedule containing events and trajectories.
+    rot_offset : Rotation
+        Rotation offset to apply to each pose.
+    transform : Transform
+        Transform to apply to points before pose creation.
+
+    Returns
+    -------
+    ScheduleTrajectory
+        Compiled trajectory message with time-stamped poses.
+    """
     traj_points = []
     initial_point = sched._events[0].traj[0]
     initial_point_base = transform * initial_point.data
@@ -147,6 +202,6 @@ def create_schedule_trajectory(
     for t, p in traj_points:
         point = ScheduleTrajectoryPoint()
         point.pose = p
-        point.time_from_start = rospy.Duration.from_sec(t)
+        point.time_from_start = Duration(seconds=t).to_msg()
         traj.points.append(point)
     return traj

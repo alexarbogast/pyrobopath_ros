@@ -1,21 +1,37 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import rospy
-import actionlib
+import rclpy
+from rclpy.node import Node
+from rclpy.action import ActionServer, CancelResponse, GoalResponse
 
 from geometry_msgs.msg import Point, Vector3, Quaternion
 from taskspace_control_msgs.msg import PoseTwistSetpoint
-from pyrobopath_ros.msg import (
-    FollowScheduleTrajectoryAction,
-    FollowScheduleTrajectoryGoal,
-    FollowScheduleTrajectoryFeedback,
-    FollowScheduleTrajectoryResult,
-)
+from pyrobopath_ros.action import FollowScheduleTrajectory
+
 from pyrobopath_ros.trajectory import create_trajectory
 
 
-class ScheduleExecutionServer:
+class ScheduleExecutionServer(Node):
     def __init__(self):
+        super().__init__("schedule_execution_server")
+
+        # Publisher for controller setpoints
+        self.setpoint_pub = self.create_publisher(
+            PoseTwistSetpoint, "pose_controller/setpoint", 10
+        )
+
+        # Action server
+        self._action_server = ActionServer(
+            self,
+            FollowScheduleTrajectory,
+            "follow_schedule_trajectory",
+            execute_callback=self.execute_cb,
+            goal_callback=self.goal_cb,
+            cancel_callback=self.cancel_cb,
+        )
+
+        self.get_logger().info("Schedule Execution Action Server started.")
+
         self.action_server = actionlib.SimpleActionServer(
             "follow_schedule_trajectory",
             FollowScheduleTrajectoryAction,
@@ -70,6 +86,12 @@ class ScheduleExecutionServer:
 
 
 if __name__ == "__main__":
-    rospy.init_node("schedule_execution_server")
-    server = ScheduleExecutionServer()
-    rospy.spin()
+    rclpy.init()
+    node = ScheduleExecutionServer()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
