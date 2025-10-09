@@ -1,33 +1,28 @@
 # Pyrobopath ROS
 
-Ros utilities and execution clients for
+Ros interfaces and execution clients for
 [pyrobopath](https://github.com/alexarbogast/pyrobopath).
 
 ## Installation
 
-First install pyrobopath.
+Install the pyrobopath Python package.
 ```sh
 pip install pyrobopath
 ```
 
-Create a catkin workspace
+Create a colcon workspace and install the package
 ```sh
 mkdir -p pyrobopath_ws/src && cd pyrobopath_ws/src
 ```
 
-The Pyrobopath ROS interface depends on the cartesian_planning package for
-executing toolpath schedules.
-
-To use the package, clone the
+The `pyrobopath_ros` package requires the
 [cartesian_planning](https://github.com/alexarbogast/cartesian_planning)
-repository and Pyrobopath ROS into your catkin workspace and build the
-packages.
-
+library. Clone the packages and build the colcon workspace.
 ```sh
 git clone git@github.com:alexarbogast/cartesian_planning.git
 git clone git@github.com:alexarbogast/pyrobopath_ros.git
 cd ../
-catkin build
+colcon build
 ```
 
 ## Documentation
