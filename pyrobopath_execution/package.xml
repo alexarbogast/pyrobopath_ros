@@ -7,10 +7,8 @@
   <maintainer email="arbogastaw@gmail.com">Alex Arbogast</maintainer>
   <license>MIT</license>
 
-  <buildtool_depend>ament_python</buildtool_depend>
   <exec_depend>rclpy</exec_depend>
-  <exec_depend>pyrobopath_msgs</exec_depend
-  <exec_depend>pyrobopath</exec_depend
+  <exec_depend>pyrobopath_msgs</exec_depend>
 
   <export>
     <build_type>ament_python</build_type>

@@ -33,9 +33,6 @@ from .executor_base import Executor
 
 JOINT_STATE_TIMEOUT = 5  # seconds
 
-# TODO: Read values through parameters
-JOINT_SPACE_CONTROLLER = "joint_trajectory_controller"
-
 
 class CartesianPlanningExecutor(Executor):
     MotionPlan = list[tuple[float, FollowJointTrajectory.Goal]]
@@ -58,26 +55,12 @@ class CartesianPlanningExecutor(Executor):
         if not self._plan_multi_agent_schedule(sched):
             return
 
-        # debug
-        plans = self._schedule_plan_buffer["rob1"]
-        for point in plans[0][1].trajectory.points:
-            self._node.get_logger().info(str(point.time_from_start))
-
         # Compile plans into single trajectory goal
         compiled_plans = dict()
         for agent, plans in self._schedule_plan_buffer.items():
             for start_t, plan in plans:
                 offset_trajectory_times(plan.trajectory.points, start_t)
             compiled_plans[agent] = compile_schedule_plans([p for _, p in plans])
-
-        # debug
-        plans = self._schedule_plan_buffer["rob1"]
-        for point in plans[0][1].trajectory.points:
-            self._node.get_logger().info(str(point.time_from_start))
-        # for t_start, plan in plans:
-        #     self._node.get_logger().info(f"Start time: {t_start}")
-        #     for point in plan.trajectory._points:
-        #         self._node.get_logger().info(str(point.time_from_start))
 
         # Send goals to action server
         traj_preprocess_offset = 1.0
@@ -106,18 +89,7 @@ class CartesianPlanningExecutor(Executor):
     def _plan_multi_agent_schedule(self, schedule: MultiAgentToolpathSchedule):
         self._node.get_logger().info("Planning events in multi-agent schedule")
         for agent, sched in schedule.schedules.items():
-            joint_state_topic = f"/{agent}/joint_states"
-            _, start_state = wait_for_message(
-                JointState,
-                self._node,
-                joint_state_topic,
-                time_to_wait=JOINT_STATE_TIMEOUT,
-            )
-
-            if start_state is None:
-                msg = "Timed out waiting for JointState on topic: " + joint_state_topic
-                self._node.get_logger().error(msg)
-                raise RuntimeError(msg)
+            start_state = self._clients[agent].get_joint_state()
 
             for event in sched._events:
                 resp = self._plan_event(event, agent, start_state)  # type: ignore
@@ -190,8 +162,34 @@ class AgentExecutionClient:
         self.id = id
         self.context = context
 
-        # action client: /<id>/<controller>/follow_joint_trajectory
-        action_name = f"{self.id}/{JOINT_SPACE_CONTROLLER}/follow_joint_trajectory"
+        controller_param_name = f"{self.id}.controller"
+        joint_param_name = f"{self.id}.joints"
+        joint_states_topic_param_name = f"{self.id}.joint_states_topic"
+
+        # read parameters
+        self.node.declare_parameter(controller_param_name, "")
+        controller = self.node.get_parameter(controller_param_name).value
+        if controller == "":
+            raise RuntimeError(f"Missing required parameter: {controller_param_name}")
+
+        self.node.declare_parameter(joint_param_name, [""])
+        self.joints: list[str] = self.node.get_parameter(joint_param_name).value
+        if self.joints == [""]:
+            raise RuntimeError(f"Missing required parameter: {joint_param_name}")
+
+        self.node.declare_parameter(joint_states_topic_param_name, "")
+        self.joint_states_topic: str = self.node.get_parameter(
+            joint_states_topic_param_name
+        ).value
+        if self.joint_states_topic == "":
+            self.node.get_logger().info(
+                f"Parameter '{joint_states_topic_param_name}' was not provided. "
+                "Defaulting to '/joint_states'"
+            )
+            self.joint_states_topic = "/joint_states"
+
+        # action client: <controller>/follow_joint_trajectory
+        action_name = f"{controller}/follow_joint_trajectory"
         self.joint_execution_client = ActionClient(
             node, FollowJointTrajectory, action_name
         )
@@ -247,18 +245,7 @@ class AgentExecutionClient:
         """Moves agents to the joint positions in the `/{ns}/home_position`
         parameter.
         """
-        joint_state_topic = f"/{self.id}/joint_states"
-        _, start_state = wait_for_message(
-            JointState,
-            self.node,
-            joint_state_topic,
-            time_to_wait=JOINT_STATE_TIMEOUT,
-        )
-
-        if start_state is None:
-            msg = "Timed out waiting for JointState on topic: " + joint_state_topic
-            self.node.get_logger().error(msg)
-            raise RuntimeError(msg)
+        start_state = self.get_joint_state()
 
         point = JointTrajectoryPoint()
         point.positions = list(self.context.joint_home)
@@ -271,6 +258,32 @@ class AgentExecutionClient:
         goal.trajectory.points = [point]
 
         self.execute_trajectory(goal)
+
+    def get_joint_state(self) -> JointState:
+        _, state = wait_for_message(
+            JointState,
+            self.node,
+            self.joint_states_topic,
+            time_to_wait=JOINT_STATE_TIMEOUT,
+        )
+
+        if state is None:
+            msg = (
+                "Timed out waiting for JointState on topic: " + self.joint_states_topic
+            )
+            self.node.get_logger().error(msg)
+            raise RuntimeError(msg)
+
+        # filter joint state
+        index_map = [state.name.index(j) for j in self.joints]
+
+        filtered = JointState()
+        filtered.header = state.header
+        filtered.name = self.joints
+        filtered.position = [state.position[j] for j in index_map]
+        filtered.velocity = [state.velocity[j] for j in index_map]
+        filtered.effort = [state.effort[j] for j in index_map]
+        return filtered
 
     def shutdown(self):
         # cancel goals if action server provides cancellation
