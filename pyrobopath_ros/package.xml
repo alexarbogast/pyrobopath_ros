@@ -2,7 +2,7 @@
 <package format="3">
   <name>pyrobopath_ros</name>
   <version>0.2.0</version>
-  <description>Meta-package for pyrobopath ROS2 integration</description>
+  <description>ROS2 interfaces and execution clients for pyrobopath</description>
   <author email="arbogastaw@gmail.com">Alex Arbogast</author>
   <maintainer email="arbogastaw@gmail.com">Alex Arbogast</maintainer>
   <license>MIT</license>

@@ -2,7 +2,7 @@
 <package format="3">
   <name>pyrobopath_execution</name>
   <version>0.1.0</version>
-  <description>Python ROS2 interfaces for pyrobopath schedule execution</description>
+  <description>ROS2 mechanisms for pyrobopath schedule execution</description>
   <author email="arbogastaw@gmail.com">Alex Arbogast</author>
   <maintainer email="arbogastaw@gmail.com">Alex Arbogast</maintainer>
   <license>MIT</license>
