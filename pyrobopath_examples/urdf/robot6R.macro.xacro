@@ -1,0 +1,232 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+  A fictitious robot model for testing purposes.
+  The kinematics is roughly inspired by the universal robots ur10.
+  -->
+
+  <xacro:macro name="robot6R_macro" params="prefix">
+
+    <!-- joint properties -->
+    <xacro:property name="joint_radius" value="0.02" />
+    <xacro:property name="joint_length" value="0.03" />
+
+    <!-- link properties -->
+    <xacro:property name="link_radius" value="0.01" />
+    <xacro:property name="link1_length" value="0.15" />
+    <xacro:property name="link2_length" value="0.5" />
+    <xacro:property name="link3_length" value="0.5" />
+    <xacro:property name="link4_length" value="0.15" />
+    <xacro:property name="link5_length" value="0.10" />
+    <xacro:property name="link6_length" value="0.05" />
+
+    <!-- links -->
+    <link name="${prefix}base_link">
+      <visual name="joint">
+        <origin xyz="0 0 ${joint_length / 2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link1">
+      <visual name="joint1">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 0 ${link1_length / 2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${link1_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="joint2">
+        <origin xyz="0 0 ${link1_length}" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link2">
+      <visual name="joint2">
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 0 ${link2_length / 2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${link2_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="joint3">
+        <origin xyz="0 0 ${link2_length}" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link3">
+      <visual name="joint3">
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 0 ${link3_length / 2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${link3_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="joint4">
+        <origin xyz="0 0 ${link3_length}" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link4">
+      <visual name="joint4">
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 ${link4_length / 2.0} 0" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${link4_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="joint5">
+        <origin xyz="0 ${link4_length} 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link5">
+      <visual name="joint5">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 0 ${link5_length / 2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${link5_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="joint6">
+        <origin xyz="0 0 ${link5_length}" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}link6">
+      <visual name="joint6">
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${joint_length}" radius="${joint_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual name="link">
+        <origin xyz="0 ${link6_length / 2.0} 0" rpy="${-pi / 2.0} 0 0" />
+        <geometry>
+          <cylinder length="${link6_length}" radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+
+    <!-- joints -->
+    <joint name="${prefix}joint1" type="revolute">
+      <parent link="${prefix}base_link" />
+      <child link = "${prefix}link1" />
+      <origin xyz="0.0 0.0 ${3.0 / 2.0 * joint_length}" rpy="0.0 0.0 0.0" />
+      <axis xyz="0 0 1" />
+      <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+    <joint name="${prefix}joint2" type="revolute">
+      <parent link="${prefix}link1" />
+      <child link = "${prefix}link2" />
+      <origin xyz="0.0 ${joint_length} ${link1_length}" rpy="0.0 ${pi / 2.0} 0.0" />
+      <axis xyz="0 1 0" />
+      <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+    <joint name="${prefix}joint3" type="revolute">
+      <parent link="${prefix}link2" />
+      <child link = "${prefix}link3" />
+      <origin xyz="0.0 -${joint_length} ${link2_length}" rpy="0.0 0.0 0.0" />
+      <axis xyz="0 1 0" />
+      <limit lower="${-pi}" upper="${pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+    <joint name="${prefix}joint4" type="revolute">
+      <parent link="${prefix}link3" />
+      <child link = "${prefix}link4" />
+      <origin xyz="0.0 ${joint_length} ${link3_length}" rpy="0.0 ${pi / 2.0} 0.0" />
+      <axis xyz="0 1 0" />
+      <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+    <joint name="${prefix}joint5" type="revolute">
+      <parent link="${prefix}link4" />
+      <child link = "${prefix}link5" />
+      <origin xyz="0.0 ${link4_length} ${joint_length}" rpy="0.0 0.0 0.0" />
+      <axis xyz="0 0 1" />
+      <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+    <joint name="${prefix}joint6" type="revolute">
+      <parent link="${prefix}link5" />
+      <child link = "${prefix}link6" />
+      <origin xyz="0.0 ${joint_length} ${link5_length}" rpy="0.0 0.0 0.0" />
+      <axis xyz="0 1 0" />
+      <limit lower="${-2.0 * pi}" upper="${2.0 * pi}" effort="1.0" velocity="10.0"/>
+    </joint>
+
+    <!-- The default end-effector -->
+    <joint name="${prefix}tool0_joint" type="fixed">
+      <origin xyz="0 ${link6_length} 0" rpy="${-pi/2} 0 0"/>
+      <parent link="${prefix}link6"/>
+      <child link="${prefix}tool0"/>
+    </joint>
+    <link name="${prefix}tool0">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <sphere radius="${link_radius}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+    <link name="${prefix}tool"/>
+    <joint name="${prefix}tool_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="${-pi/2} ${-pi/2} 0"/>
+      <parent link="${prefix}tool0"/>
+      <child link="${prefix}tool"/>
+    </joint>
+  </xacro:macro>
+</robot>

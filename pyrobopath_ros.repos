@@ -1,0 +1,5 @@
+repositories:
+  cartesian_planning:
+    type: git
+    url: https://github.com/alexarbogast/cartesian_planning
+    version: ros2

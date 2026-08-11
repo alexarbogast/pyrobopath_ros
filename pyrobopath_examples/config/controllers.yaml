@@ -1,0 +1,50 @@
+# 6R robot simulation hardware
+controller_manager:
+  ros__parameters:
+    update_rate: 250  # Hz
+    rob1_joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    rob2_joint_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+rob1_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - rob1_joint1
+      - rob1_joint2
+      - rob1_joint3
+      - rob1_joint4
+      - rob1_joint5
+      - rob1_joint6
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    constraints:
+      stopped_velocity_tolerance: 0.01 # Defaults to 0.01
+      goal_time: 0.0 # Defaults to 0.0 (start immediately)
+
+rob2_joint_trajectory_controller:
+  ros__parameters:
+    joints:
+      - rob2_joint1
+      - rob2_joint2
+      - rob2_joint3
+      - rob2_joint4
+      - rob2_joint5
+      - rob2_joint6
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    constraints:
+      stopped_velocity_tolerance: 0.01 # Defaults to 0.01
+      goal_time: 0.0 # Defaults to 0.0 (start immediately)
