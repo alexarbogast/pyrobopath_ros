@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot name="two_robot6R" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:property name="radius" value="0.5"/>
+  <xacro:property name="spacing" value="0.52"/>
+
+  <xacro:include filename="$(find pyrobopath_examples)/urdf/robot6R.macro.xacro"/>
+  <xacro:robot6R_macro prefix="rob1_"/>
+  <xacro:robot6R_macro prefix="rob2_"/>
+
+  <!-- Colors -->
+  <material name="grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+
+  <!-- Connect to world -->
+  <link name="world"/>
+  <joint name="world_rob1_base" type="fixed">
+    <parent link="world"/>
+    <child link = "rob1_base_link"/>
+    <origin xyz="-${radius} -${spacing/2} 0.0" rpy="0.0 0.0 0.0"/>
+  </joint>
+  <joint name="world_rob2_base" type="fixed">
+    <parent link="world"/>
+    <child link = "rob2_base_link"/>
+    <origin xyz="${radius} ${spacing/2} 0.0" rpy="0.0 0.0 ${pi}"/>
+  </joint>
+
+  <!-- ROS2 control -->
+  <xacro:include filename="$(find pyrobopath_examples)/urdf/robot6R.ros2_control.xacro"/>
+
+  <ros2_control name="two_robot_ros2_control" type="system">
+    <hardware>
+      <plugin>mock_components/GenericSystem</plugin>
+    </hardware>
+    <xacro:robot6R_ros2_control prefix="rob1_"/>
+    <xacro:robot6R_ros2_control prefix="rob2_"/>
+  </ros2_control>
+</robot>
