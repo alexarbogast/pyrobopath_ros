@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Status1
+        - /TF1
       Splitter Ratio: 0.5
     Tree Height: 771
   - Class: rviz_common/Views
@@ -193,7 +194,7 @@ Visualization Manager:
         rob2_tool0:
           Value: false
         world:
-          Value: false
+          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
@@ -222,6 +223,32 @@ Visualization Manager:
                           rob2_tool:
                             {}
       Update Interval: 0
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Rob1 Collision
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rob1/visualization_marker
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Rob2 Collision
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rob2/visualization_marker
       Value: true
   Enabled: true
   Global Options:

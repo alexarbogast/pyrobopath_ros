@@ -1,22 +1,17 @@
 from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
 from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    rviz_config_file = (
-        PathJoinSubstitution(
-            [
-                FindPackageShare("pyrobopath_examples"),
-                "config",
-                "pyrobopath_examples.rviz",
-            ]
-        ),
-    )
-
     pkg_share = FindPackageShare("pyrobopath_examples")
+    rviz_config_file = PathJoinSubstitution(
+        [pkg_share, "config", "pyrobopath_examples.rviz"]
+    )
     controller_config = PathJoinSubstitution([pkg_share, "config", "controllers.yaml"])
     description_file = PathJoinSubstitution([pkg_share, "urdf", "two_robot6R.xacro"])
 
@@ -58,6 +53,18 @@ def generate_launch_description():
         ],
     )
 
+    planning_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
+                [
+                    FindPackageShare("pyrobopath_examples"),
+                    "launch",
+                    "cartesian_planning_servers.launch.py",
+                ]
+            )
+        ),
+    )
+
     rviz_node = Node(
         package="rviz2",
         executable="rviz2",
@@ -70,6 +77,7 @@ def generate_launch_description():
         control_node,
         robot_state_publisher_node,
         robot_controller_spawner,
+        planning_launch,
         rviz_node,
     ]
 

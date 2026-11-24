@@ -1,0 +1,18 @@
+rob1:
+  collision_visualization:
+    ros__parameters:
+      eef_frame: rob1_tool
+
+rob2:
+  collision_visualization:
+    ros__parameters:
+      eef_frame: rob2_tool
+
+/**:
+  ros__parameters:
+    collision:
+      length: 0.5
+      width: 0.20
+      height: 0.5
+
+      offset: [0.0, -0.08, 0.23]

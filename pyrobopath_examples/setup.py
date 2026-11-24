@@ -24,6 +24,12 @@ setup(
     maintainer="Alex Arbogast",
     maintainer_email="arbogastaw@gmail.com",
     description="examples implementations using pyrobopath_ros",
-    license="Apache License, Version 2.0",
+    license="MIT",
     tests_require=["pytest"],
+    entry_points={
+        "console_scripts": [
+            "pyrobopath_demo = pyrobopath_examples.pyrobopath_demo:main",
+            "visualize_collision_geometry = pyrobopath_examples.visualize_collision_geometry:main",
+        ],
+    },
 )
