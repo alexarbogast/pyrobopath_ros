@@ -1,7 +1,6 @@
 # Pyrobopath ROS
 
-Ros interfaces and execution clients for
-[pyrobopath](https://github.com/alexarbogast/pyrobopath).
+Ros interfaces and execution clients for [pyrobopath](https://github.com/alexarbogast/pyrobopath).
 
 ## Installation
 
@@ -10,22 +9,38 @@ Install the pyrobopath Python package.
 pip install pyrobopath
 ```
 
-Create a colcon workspace and install the package
+Create a colcon workspace and install the package and its dependencies.
 ```sh
 mkdir -p pyrobopath_ws/src && cd pyrobopath_ws/src
-```
-
-The `pyrobopath_ros` package requires the
-[cartesian_planning](https://github.com/alexarbogast/cartesian_planning)
-library. Clone the packages and build the colcon workspace.
-```sh
-git clone git@github.com:alexarbogast/cartesian_planning.git
-git clone git@github.com:alexarbogast/pyrobopath_ros.git
+vcs import . < pyrobopath_ros/pyrobopath_ros.repos
 cd ../
 colcon build
 ```
 
+## Examples
+
+The `pyrobopath_examples` package provides a simple two-robot example to illustrate system setup and demonstrate the core package functionality.
+
+**Running the Demo**
+
+1) Bringup the two-robot system:
+
+```shell
+ros2 launch pyrobopath_examples bringup.launch.py
+```
+
+2) Launch the demo in a separate terminal:
+
+```shell
+ros2 launch pyrobopath_examples pyrobopath_demo.launch.py
+```
+
+**Visualizing Collision Geometry**
+
+```shell
+ros2 launch pyrobopath_examples visualize_collision_geometry.launch.py
+```
+
 ## Documentation
-Checkout the [Pyrobopath
-Documentation](https://pyrobopath.readthedocs.io/en/latest/) for installation
-help, examples, and API reference. 
+
+Checkout the [Pyrobopath Documentation](https://pyrobopath.readthedocs.io/en/latest/) for installation help, examples, and API reference.
