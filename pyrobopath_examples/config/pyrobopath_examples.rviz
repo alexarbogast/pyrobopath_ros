@@ -1,0 +1,300 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 85
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Status1
+        - /TF1
+      Splitter Ratio: 0.5
+    Tree Height: 771
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        rob1_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_link6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob1_tool:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rob1_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_link6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rob2_tool:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rob2_tool0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        rob1_base_link:
+          Value: false
+        rob1_link1:
+          Value: false
+        rob1_link2:
+          Value: false
+        rob1_link3:
+          Value: false
+        rob1_link4:
+          Value: false
+        rob1_link5:
+          Value: false
+        rob1_link6:
+          Value: false
+        rob1_tool:
+          Value: true
+        rob1_tool0:
+          Value: false
+        rob2_base_link:
+          Value: false
+        rob2_link1:
+          Value: false
+        rob2_link2:
+          Value: false
+        rob2_link3:
+          Value: false
+        rob2_link4:
+          Value: false
+        rob2_link5:
+          Value: false
+        rob2_link6:
+          Value: false
+        rob2_tool:
+          Value: true
+        rob2_tool0:
+          Value: false
+        world:
+          Value: true
+      Marker Scale: 0.5
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        world:
+          rob1_base_link:
+            rob1_link1:
+              rob1_link2:
+                rob1_link3:
+                  rob1_link4:
+                    rob1_link5:
+                      rob1_link6:
+                        rob1_tool0:
+                          rob1_tool:
+                            {}
+          rob2_base_link:
+            rob2_link1:
+              rob2_link2:
+                rob2_link3:
+                  rob2_link4:
+                    rob2_link5:
+                      rob2_link6:
+                        rob2_tool0:
+                          rob2_tool:
+                            {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Rob1 Collision
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rob1/visualization_marker
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Rob2 Collision
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rob2/visualization_marker
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 1.5990406274795532
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: -0.06320824474096298
+        Y: -0.12332633137702942
+        Z: 0.2418205589056015
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.2097969949245453
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 1.2303963899612427
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1043
+  Hide Left Dock: false
+  Hide Right Dock: true
+  QMainWindow State: 000000ff00000000fd000000020000000000000169000003a5fc0200000001fb000000100044006900730070006c006100790073010000004a000003a5000000f700ffffff000000010000022f000003a5fc0200000001fb0000000a00560069006500770073000000004a000003a5000000cb00ffffff00000610000003a500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: true
+  Width: 1920
+  X: 0
+  Y: 0

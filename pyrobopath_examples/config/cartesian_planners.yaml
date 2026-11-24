@@ -1,0 +1,35 @@
+rob1:
+  cartesian_planning_server:
+    ros__parameters:
+      position_threshold: 0.0005
+      rotation_threshold: 0.01
+      max_sampling_step: 0.2
+      max_step_iterations: 1000
+
+      robot_base_link: rob1_base_link
+      end_effector_link: rob1_tool
+      joints:
+        - rob1_joint1
+        - rob1_joint2
+        - rob1_joint3
+        - rob1_joint4
+        - rob1_joint5
+        - rob1_joint6
+
+rob2:
+  cartesian_planning_server:
+    ros__parameters:
+      position_threshold: 0.0005
+      rotation_threshold: 0.01
+      max_sampling_step: 0.2
+      max_step_iterations: 1000
+
+      robot_base_link: rob2_base_link
+      end_effector_link: rob2_tool
+      joints:
+        - rob2_joint1
+        - rob2_joint2
+        - rob2_joint3
+        - rob2_joint4
+        - rob2_joint5
+        - rob2_joint6

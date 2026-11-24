@@ -1,0 +1,79 @@
+pyrobopath_demo:
+  ros__parameters:
+    namespaces:
+      - rob1
+      - rob2
+
+    exec_method: cartesian_planning # 'taskspace_control' or 'cartesian_planning'
+    retract_height: 0.050
+    collision_gap_threshold: 0.005
+
+    rob1:
+      base_frame: rob1_base_link
+      eef_frame: rob1_tool
+      task_frame: world
+
+      capabilities: [0]
+
+      eef_rotation: [1.0, 0.0, 0.0, 0.0] # w, x, y, z
+      home_position:
+        - -0.442911
+        - -1.167701
+        - 2.363060
+        - -1.195359
+        - 1.127885
+        - 0.0
+
+      velocity: 0.100
+      travel_velocity: 0.150
+
+      collision:
+        length: 0.5
+        width: 0.20
+        height: 0.5
+
+        offset: [0.0, -0.08, 0.23]
+
+      controller: rob1_joint_trajectory_controller
+      joints:
+        - rob1_joint1
+        - rob1_joint2
+        - rob1_joint3
+        - rob1_joint4
+        - rob1_joint5
+        - rob1_joint6
+
+    rob2:
+      base_frame: rob2_base_link
+      eef_frame: rob2_tool
+      task_frame: world
+
+      capabilities: [1]
+
+      eef_rotation: [1.0, 0.0, 0.0, 0.0] # w, x, y, z
+      home_position:
+        - -0.442911
+        - -1.167701
+        - 2.363060
+        - -1.195359
+        - 1.127885
+        - 0.0
+
+      velocity: 0.100
+      travel_velocity: 0.150
+
+      collision:
+        length: 0.5
+        width: 0.20
+        height: 0.5
+
+        offset: [0.0, -0.08, 0.23]
+
+      controller: rob2_joint_trajectory_controller
+      joints:
+        - rob2_joint1
+        - rob2_joint2
+        - rob2_joint3
+        - rob2_joint4
+        - rob2_joint5
+        - rob2_joint6

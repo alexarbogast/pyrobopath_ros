@@ -125,6 +125,12 @@ def compile_schedule_plans(
             t2_start.sec + t2_start.nanosec * 1e-9
         )
 
+        if diff > MAX_BACKWARDS_TIME:
+            raise ValueError(
+                f"Overlapping trajectories: next trajectory starts "
+                f"{diff:.6f}s before previous trajectory ends."
+            )
+
         if abs(diff) < MAX_BACKWARDS_TIME:
             goal.trajectory.points.extend(p.trajectory.points[1:])
         else:
