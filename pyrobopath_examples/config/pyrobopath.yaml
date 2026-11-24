@@ -24,7 +24,7 @@ pyrobopath_demo:
         - 1.127885
         - 0.0
 
-      velocity: 0.050
+      velocity: 0.100
       travel_velocity: 0.150
 
       collision:
@@ -59,7 +59,7 @@ pyrobopath_demo:
         - 1.127885
         - 0.0
 
-      velocity: 0.050
+      velocity: 0.100
       travel_velocity: 0.150
 
       collision:

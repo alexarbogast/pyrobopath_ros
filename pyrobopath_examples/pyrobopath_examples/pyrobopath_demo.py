@@ -10,7 +10,7 @@ from pyrobopath_execution import ScheduleExecution
 
 NAME = "pyrobopath_demo"
 
-LIMITS = ((-1.5, 1.5), (-1.5, 1.5))
+LIMITS = ((-0.75, 0.75), (-0.75, 0.75))
 
 
 def raster_rect(p, h, spacing, n):
@@ -62,33 +62,33 @@ class PyrobopathDemo(ScheduleExecution):
         self.get_logger().info("Creating demo toolpath")
 
         # Layer 1
-        path1 = raster_rect([-0.2, -0.2, 0.0], 0.5, 0.05, 1)
-        # path2 = raster_rect([0.10, -1.5, 0.0], 3.0, 0.2, 7)
+        path1 = raster_rect([-0.2, -0.2, 0.0], 0.4, 0.027, 7)
+        path2 = raster_rect([0.013333, -0.2, 0.0], 0.4, 0.027, 7)
 
         # Layer 2
-        path3 = raster_rect([-1.5, -1.5, 0.003], 1.4, 0.2, 7)
-        path4 = raster_rect([-1.5, 1.5, 0.003], 3.0, 0.2, 7)
-        path4 = rotate_pathZ(path4, [-1.5, 1.5, 0.003], -np.pi / 2)
-        path5 = raster_rect([0.1, -1.5, 0.003], 1.4, 0.2, 7)
+        path3 = raster_rect([-0.2, -0.2, 0.003], 0.187, 0.027, 7)
+        path4 = raster_rect([-0.2, 0.2, 0.003], 0.4, 0.027, 7)
+        path4 = rotate_pathZ(path4, [-0.2, 0.2, 0.0], -np.pi / 2)
+        path5 = raster_rect([0.013333, -0.2, 0.003], 0.187, 0.027, 7)
 
         # Layer 3
-        path6 = raster_rect([-1.5, 1.5, 0.006], -2.0, 0.2, 5)
-        path7 = raster_rect([-0.030, 1.5, 0.006], -2.0, 0.2, 5)
-        path8 = raster_rect([-2.3, -1.5, 0.006], 2.2, 0.2, 4)
-        path8 = rotate_pathZ(path8, [-1.5, -1.5, 0.006], -np.pi / 2)
-        path9 = raster_rect([0.9, -1.5, 0.006], 3.0, 0.2, 3)
+        path6 = raster_rect([-0.2, 0.2, 0.006], -0.27, 0.027, 5)
+        path7 = raster_rect([-0.04, 0.2, 0.006], -0.27, 0.027, 5)
+        path8 = raster_rect([-0.307, -0.2, 0.006], 0.29, 0.027, 4)
+        path8 = rotate_pathZ(path8, [-0.2, -0.2, 0.0], -np.pi / 2)
+        path9 = raster_rect([0.12, -0.2, 0.006], 0.4, 0.027, 3)
 
         c1 = Contour(path1, tool=0)
-        # c2 = Contour(path2, tool=1)
-        # c3 = Contour(path3, tool=1)
-        # c4 = Contour(path4, tool=0)
-        # c5 = Contour(path5, tool=0)
-        # c6 = Contour(path6, tool=1)
-        # c7 = Contour(path7, tool=0)
-        # c8 = Contour(path8, tool=0)
-        # c9 = Contour(path9, tool=1)
+        c2 = Contour(path2, tool=1)
+        c3 = Contour(path3, tool=1)
+        c4 = Contour(path4, tool=0)
+        c5 = Contour(path5, tool=0)
+        c6 = Contour(path6, tool=1)
+        c7 = Contour(path7, tool=0)
+        c8 = Contour(path8, tool=0)
+        c9 = Contour(path9, tool=1)
 
-        return Toolpath([c1])
+        return Toolpath([c1, c2, c3, c4, c5, c6, c7, c8, c9])
 
 
 def main(args=None):
