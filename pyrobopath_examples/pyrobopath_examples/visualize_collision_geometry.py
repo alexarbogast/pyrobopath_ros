@@ -35,34 +35,38 @@ class CollisionVisualization(Node):
         qos = QoSProfile(depth=1, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
         self.marker_pub = self.create_publisher(Marker, "visualization_marker", qos)
 
-        marker = Marker()
-        marker.header.frame_id = params["eef_frame"]
-        marker.header.stamp = self.get_clock().now().to_msg()
+        self.marker = Marker()
+        self.marker.header.frame_id = params["eef_frame"]
+        self.marker.header.stamp = self.get_clock().now().to_msg()
 
-        marker.ns = "attached_box"
-        marker.id = 0
-        marker.type = Marker.CUBE
-        marker.action = Marker.ADD
-        marker.frame_locked = True
+        self.marker.ns = "attached_box"
+        self.marker.id = 0
+        self.marker.type = Marker.CUBE
+        self.marker.action = Marker.ADD
+        self.marker.frame_locked = True
 
-        marker.pose.position.x = -length / 2 - offset[0]
-        marker.pose.position.y = offset[1]
-        marker.pose.position.z = offset[2]
-        marker.pose.orientation.x = 0.0
-        marker.pose.orientation.y = 0.0
-        marker.pose.orientation.z = 0.0
-        marker.pose.orientation.w = 1.0
+        self.marker.pose.position.x = -length / 2 - offset[0]
+        self.marker.pose.position.y = offset[1]
+        self.marker.pose.position.z = offset[2]
+        self.marker.pose.orientation.x = 0.0
+        self.marker.pose.orientation.y = 0.0
+        self.marker.pose.orientation.z = 0.0
+        self.marker.pose.orientation.w = 1.0
 
-        marker.scale.x = length
-        marker.scale.y = width
-        marker.scale.z = height
+        self.marker.scale.x = length
+        self.marker.scale.y = width
+        self.marker.scale.z = height
 
-        marker.color.r = 1.0
-        marker.color.g = 0.0
-        marker.color.b = 0.0
-        marker.color.a = 0.5
+        self.marker.color.r = 1.0
+        self.marker.color.g = 0.0
+        self.marker.color.b = 0.0
+        self.marker.color.a = 0.5
 
-        self.marker_pub.publish(marker)
+        self.marker_timer = self.create_timer(1.0, self.publish_marker)
+
+    def publish_marker(self):
+        self.marker.header.stamp = self.get_clock().now().to_msg()
+        self.marker_pub.publish(self.marker)
 
 
 def main(args=None):
